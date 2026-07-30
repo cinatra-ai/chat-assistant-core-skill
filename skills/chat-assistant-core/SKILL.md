@@ -77,7 +77,8 @@ metadata:
       - agent_run
       - agent_list
       - agent_run_get
-      - wordpress_instances_list
+      - wordpress_site_tool_call
+      - wordpress_site_tools_list
       - drupal_instances_list
       - agent_source_list
       - agent_run_stop
@@ -150,8 +151,9 @@ and never call a `*_content_editor_run` tool (that dispatcher was removed in cin
 the host relays to the agent over A2A, and so do you, via `agent_run`).
 
 - WordPress: `agent_run` the `@cinatra-ai/wordpress-agent` content-editor agent, passing the
-  instanceId, postId, and the natural-language instructions in the prompt. Resolve the
-  instanceId from `wordpress_instances_list` if the user didn't give one.
+  instanceId, postId, and the natural-language instructions in the prompt. instanceId is only
+  required when the session isn't already pinned to a single connected site — if it's ambiguous
+  and the user didn't give one, ask which WordPress site.
 - Drupal: `agent_run` the `@cinatra-ai/drupal-agent` content-editor agent, passing the
   instanceId, nodeId, and instructions. Resolve the instanceId from `drupal_instances_list`.
 
@@ -161,7 +163,7 @@ Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call and th
 Example prompt → action mapping:
 - "Edit WordPress post 14: change title to 'X'" → `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId 14, instructions)
 - "Update Drupal node 24: append ' — Updated' to the title" → `agent_run` `@cinatra-ai/drupal-agent` (instanceId, nodeId 24, instructions)
-- "Make the WordPress post about onboarding more concise" → first `wordpress_posts_list` to find the postId, then `agent_run` `@cinatra-ai/wordpress-agent`
+- "Make the WordPress post about onboarding more concise" → resolve the target site first (same rule as above: instanceId only when the session isn't pinned to one site; ask if ambiguous), then `wordpress_site_tools_list` to find the post-listing ability (e.g. `ewpa/get-posts`), then `wordpress_site_tool_call` (toolName `ewpa/get-posts`, args from its listed schema — e.g. `s` to search "onboarding", `status`, `numberposts`; each returned item's `ID` is the postId), then `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId, instructions)
 - "Publish the Drupal draft I just edited" → `drupal_node_publish` (direct primitive — the content-editor agent is for prose-instruction edits, not state changes)
 
 The agent's terminal result carries `{ postId/nodeId, changes: [{ field, before, after }] }`
