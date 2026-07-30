@@ -163,7 +163,7 @@ Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call and th
 Example prompt → action mapping:
 - "Edit WordPress post 14: change title to 'X'" → `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId 14, instructions)
 - "Update Drupal node 24: append ' — Updated' to the title" → `agent_run` `@cinatra-ai/drupal-agent` (instanceId, nodeId 24, instructions)
-- "Make the WordPress post about onboarding more concise" → first `wordpress_site_tools_list` to find the post-listing ability (e.g. `ewpa/get-posts`), then `wordpress_site_tool_call` with that toolName to find the postId, then `agent_run` `@cinatra-ai/wordpress-agent`
+- "Make the WordPress post about onboarding more concise" → resolve the target site first (same rule as above: instanceId only when the session isn't pinned to one site; ask if ambiguous), then `wordpress_site_tools_list` to find the post-listing ability (e.g. `ewpa/get-posts`), then `wordpress_site_tool_call` (toolName `ewpa/get-posts`, args from its listed schema — e.g. `s` to search "onboarding", `status`, `numberposts`; each returned item's `ID` is the postId), then `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId, instructions)
 - "Publish the Drupal draft I just edited" → `drupal_node_publish` (direct primitive — the content-editor agent is for prose-instruction edits, not state changes)
 
 The agent's terminal result carries `{ postId/nodeId, changes: [{ field, before, after }] }`
