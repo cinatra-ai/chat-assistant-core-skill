@@ -56,13 +56,24 @@ metadata:
   # cinatra-watches: the UNION of the six absorbed bundles' watch blocks — the
   # CI gate's enforced watch surface must not shrink in this consolidation;
   # every entry below appears in exactly the block that declared it, deduplicated.
-  # From the core baseline: the dispatch + CMS instance-list primitives and the
-  # content-editor agent packages (the `*_content_editor_run` dispatcher
-  # primitives were removed in cinatra#246 — CMS edits go through `agent_run` of
-  # the content-editor agent — and the @cinatra-ai/trigger-agent package was
-  # retired in cinatra#1034, so neither is watched; conceptual prose
-  # (personality, charts) has no stable surface and is intentionally not
-  # watched). From chat-agent-dispatch: the dispatch primitives + the
+  # From the core baseline: the dispatch primitives, the CMS primitives this
+  # skill actually names, and the content-editor agent packages (the
+  # `*_content_editor_run` dispatcher primitives were removed in cinatra#246 —
+  # CMS edits go through `agent_run` of the content-editor agent — and the
+  # @cinatra-ai/trigger-agent package was retired in cinatra#1034, so neither is
+  # watched; conceptual prose (personality, charts) has no stable surface and is
+  # intentionally not watched). The two CMS sides are no longer symmetric:
+  # Drupal still has an instance-list primitive, WordPress does not — cinatra#2022
+  # S7 deleted the 12 per-operation `wordpress_*` facade tools, leaving only the
+  # two generic governed primitives, which cinatra#2232 put on chat's allowlist
+  # in their place. (Those 12 names are enumerated in the wordpress-mcp-connector
+  # CHANGELOG and deliberately not re-spelled here: #2022's close gate is a
+  # shipped-code search that must return zero hits for them, and this file ships.)
+  # The two policy paths below are watched because that WordPress guidance depends
+  # on them: `delegated-chat-tool-policy.ts` decides whether chat may reach the two
+  # primitives at all, and `instance-tool-policy.ts` owns the deny-by-default
+  # per-connection allowlist the guidance tells the assistant to expect.
+  # From chat-agent-dispatch: the dispatch primitives + the
   # source-path globs that catch a param-shape change to agent_run that leaves
   # the primitive name unchanged. From chat-run-polling: the run-lifecycle
   # primitives the poll discipline depends on. From chat-extension-discovery:
@@ -97,6 +108,8 @@ metadata:
       - packages/agents/src/reserved-workspace-slugs.ts
       - packages/extensions/src/mcp/handlers.ts
       - packages/agents/src/mcp/handlers.ts
+      - packages/mcp-server/src/delegated-chat-tool-policy.ts
+      - packages/mcp-server/src/instance-tool-policy.ts
 ---
 
 
@@ -156,6 +169,25 @@ the host relays to the agent over A2A, and so do you, via `agent_run`).
   and the user didn't give one, ask which WordPress site.
 - Drupal: `agent_run` the `@cinatra-ai/drupal-agent` content-editor agent, passing the
   instanceId, nodeId, and instructions. Resolve the instanceId from `drupal_instances_list`.
+
+WordPress reads go through the connected site's own ability catalog, which is allowlisted
+per connection and denied by default (cinatra#2022 S7) — a healthy, fully connected site
+still refuses abilities nobody has enabled for that connection yet. These failures are
+self-describing, so read the message and answer what it actually says instead of treating
+every `wordpress_site_tool_call` / `wordpress_site_tools_list` failure alike:
+
+- Denied by the instance policy for a server — the connection is fine, that ability just
+  isn't permitted for it. Do NOT retry, and do NOT report it as the post being missing or
+  the edit having failed. Say the ability isn't enabled for that connection, name it, and
+  point the user at that connection's tool-access settings.
+- Not present in the instance catalog, or non-unique across enrolled servers — a catalog
+  or naming problem, not a permission one. Re-read `wordpress_site_tools_list` and use an
+  ability id it actually advertises; a non-unique name needs a serverId to disambiguate.
+- A message starting `pending_confirmation:` — a data-changing call is parked waiting for
+  the user to confirm it in the chat panel and did NOT run. Surface that and let them
+  decide; never retry it or try to work around it.
+
+Anything else is a genuine error — report it as one.
 
 Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call and the
 `chat-run-polling` skill for the mandatory `agent_run_get` poll until the run is terminal.
