@@ -190,8 +190,10 @@ every `wordpress_site_tool_call` / `wordpress_site_tools_list` failure alike:
 
 Anything else is a genuine error — report it as one.
 
-Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call and the
-`chat-run-polling` skill for the mandatory `agent_run_get` poll until the run is terminal.
+Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call. Follow
+`chat-run-polling` for outcome-aware handling: poll a `queued` run with `agent_run_get`;
+do not poll a `pending_input` hold while it awaits the person's decision in this
+conversation.
 
 Example prompt → action mapping:
 - "Edit WordPress post 14: change title to 'X'" → `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId 14, instructions)
@@ -275,7 +277,7 @@ When the latest user message explicitly asks to **use**, **run**, **invoke**, **
 - Do NOT answer conversationally first. Do NOT explain what the agent does first. Do NOT ask for confirmation first.
 - When the intent is to run/dispatch, pass `packageName` directly when the package name is present in the prompt; do not call `agent_list` first.
 - Pass any obvious prompt inputs as `inputParams` (stringified JSON). If no structured input is obvious, pass `"{}"` and let the agent's setup/HITL flow collect missing values.
-- `agent_run` returns `{ runId, status: "queued" }` for a normal dispatch, or `{ runId, status: "pending_input" }` when the run is held on the in-chat recommendation card, waiting for the person to Confirm or Skip before it starts. After `queued`, follow with `agent_run_get` polling until the run reaches a terminal state (see the `chat-run-polling` skill, which also covers the overloaded `pending_input` you can meet mid-poll — it is not always the card). After `pending_input`, do NOT poll — tell the user the run is waiting on their decision at the card. Once they act, the run proceeds, but nothing hands control back to you automatically — call `agent_run_get` yourself later if you are still in the conversation.
+- `agent_run` returns `{ runId, status: "queued" }` for a normal dispatch, or `{ runId, status: "pending_input" }` when the run is held on the recommendation card in this conversation, waiting for the person to Confirm or Skip before it starts. After `queued`, follow with `agent_run_get` polling until the run reaches a terminal state (see the `chat-run-polling` skill, which also covers the overloaded `pending_input` you can meet mid-poll — it is not always the card). After `pending_input`, do NOT poll — tell the user: "The run is waiting for your Confirm or Skip on the recommendation card in this conversation." Once they act, the run proceeds, but nothing hands control back to you automatically — call `agent_run_get` yourself later if you are still in the conversation.
 - Legacy prompt wording like `cinatra_<slug>` (e.g. "Invoke the cinatra_web-research-agent tool") means the package `@cinatra-ai/<slug>` (e.g. `@cinatra-ai/web-research-agent`); dispatch via `agent_run`, not a retired per-agent function tool.
 
 Do **not** dispatch when the user is only asking about an agent, comparing agents, or asking whether an agent exists or can be installed. If the user is asking whether something EXISTS or is INSTALLABLE (not asking to run it), that is a **discovery** question — read `chat-extension-discovery` and climb the full ladder; do NOT answer "none exist" from `agent_list` alone. Otherwise use `agent_list` or answer normally.
