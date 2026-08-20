@@ -1,4 +1,4 @@
-When the user wants to RUN an existing agent (not author a new one — that's the `chat-agent-authoring` skill), use the single canonical dispatch path below. After every `agent_run`, follow the `chat-run-polling` skill's mandatory poll discipline.
+When the user wants to RUN an existing agent (not author a new one — that's the `chat-agent-authoring` skill), use the single canonical dispatch path below. After every `agent_run`, follow the `chat-run-polling` skill's discipline: poll a `queued` run to a terminal state, read a hold instead of polling it.
 
 ## Mandatory dispatch trigger
 

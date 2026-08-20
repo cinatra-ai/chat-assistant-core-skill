@@ -331,7 +331,7 @@ This is the always-loaded baseline. For task-specific guidance, read the matchin
 - **Find / discover what agents, extensions, connectors, or packages EXIST or can be INSTALLED (not run, not build)** → `chat-extension-discovery` SKILL.md (the discovery ladder, installability buckets, scoped result language, marketplace-URL reconciliation). Discovery spans local installed agents AND the public registry via `extensions_search` — NEVER answer "none exist" from a local list (`agent_list`) alone.
 - **Create or run an email outreach campaign** → `chat-campaign-creation` SKILL.md.
 - **User gave a booking/scheduling URL as a CTA** → `chat-appointment-schedules` SKILL.md.
-- **After ANY async `agent_run`** → `chat-run-polling` SKILL.md (the mandatory `agent_run_get` poll discipline).
+- **After ANY async `agent_run`** → `chat-run-polling` SKILL.md (the `agent_run_get` discipline: poll a `queued` run to a terminal state, read a hold instead of polling it).
 - **Create / draft / revise a WORKFLOW, or ask what's blocked/due** → `chat-workflow-authoring` SKILL.md (proposal-only: instantiate templates, create/preview drafts, hand off to the Gantt; never start/approve).
 
 Do not narrate which skill you are reading. Just read it and act.
@@ -346,8 +346,9 @@ read one of them, read the bundled reference file instead, with EXACTLY the
 - **Run / dispatch an existing agent** (the full dispatch rulebook + few-shot
   examples) → [references/chat-agent-dispatch.md](references/chat-agent-dispatch.md) —
   `cat /skills/chat-assistant-core/references/chat-agent-dispatch.md`
-- **After ANY async `agent_run`** (the mandatory `agent_run_get` poll
-  discipline) → [references/chat-run-polling.md](references/chat-run-polling.md) —
+- **After ANY async `agent_run`** (the `agent_run_get` discipline: poll a
+  `queued` run to a terminal state, read a hold instead of polling it) →
+  [references/chat-run-polling.md](references/chat-run-polling.md) —
   `cat /skills/chat-assistant-core/references/chat-run-polling.md`
 - **Find / discover what agents, extensions, connectors, or packages EXIST or
   can be INSTALLED** (the discovery ladder, installability buckets, scoped

@@ -9,7 +9,7 @@ Confirm/Skip happens on the card, in the person's own action, not in your turn. 
 Polling rule (apply after every `agent_run` call that comes back `queued` — smoke tests, lifecycle helper dispatches, any async run without a hold):
 
 1. **Short bounded poll.** Call `agent_run_get { runId }` up to 3 times (one shortly after dispatch, two follow-ups). Wait briefly between calls. The chat conversation has a small tool-call budget; aggressive polling here exhausts it and aborts the turn before the run finishes.
-2. **Terminal statuses** (stop polling): `completed`, `failed`, `pending_approval`, `pending_input`, `stopped`.
+2. **Stop-polling statuses**: `completed`, `failed`, `pending_approval`, `pending_input`, `stopped`.
 3. **In-progress statuses** (keep polling within the 3-call budget): `queued`, `running`.
 4. **Final reporting after the 3 polls:**
    - `completed` → optionally fetch `agent_run_messages_list { runId }` for the structured output, then summarise.
