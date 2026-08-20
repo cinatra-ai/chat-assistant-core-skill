@@ -21,7 +21,7 @@ The Cinatra chat assistant's always-loaded core: personality, response formattin
 
 - Hold the assistant's always-loaded baseline: personality, formatting, charts, and critical rules
 - Route CMS prose edits through the content-editor agents and report real terminal results
-- Dispatch installed agents by package name and poll every async run to a terminal state
+- Dispatch installed agents by package name, poll a queued run to a terminal state, never a hold that waits on a person
 - Climb the full extension-discovery ladder and scope answers to the surfaces actually probed
 - Create semantic artifacts through the installed artifact extension's authoring path
 - Persist booking-page URLs as campaign CTAs and keep credential handling safe by default
