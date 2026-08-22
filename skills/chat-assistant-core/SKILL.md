@@ -70,10 +70,16 @@ metadata:
   # in their place. (Those 12 names are enumerated in the wordpress-mcp-connector
   # CHANGELOG and deliberately not re-spelled here: #2022's close gate is a
   # shipped-code search that must return zero hits for them, and this file ships.)
-  # The two policy paths below are watched because that WordPress guidance depends
-  # on them: `delegated-chat-tool-policy.ts` decides whether chat may reach the two
-  # primitives at all, and `instance-tool-policy.ts` owns the deny-by-default
-  # per-connection allowlist the guidance tells the assistant to expect.
+  # The policy paths below are watched because that WordPress guidance depends
+  # on them: the two primitives carry CORE delegated-chat declarations in
+  # `host-primitive-declarations.ts` (`wordpress_site_tools_list` = discovery,
+  # `wordpress_site_tool_call` = dispatch), and `evaluateDelegatedChatAdmission`
+  # decides whether chat may reach them at all -- a reviewed admission bound to
+  # the owner and version, no longer a name allowlist.
+  # `delegated-chat-tool-policy.ts` still owns the hard-deny families and the
+  # class vocabulary that decision reads, and `instance-tool-policy.ts` owns the
+  # deny-by-default per-connection allowlist the guidance tells the assistant
+  # to expect.
   # From chat-agent-dispatch: the dispatch primitives + the
   # source-path globs that catch a param-shape change to agent_run that leaves
   # the primitive name unchanged. From chat-run-polling: the run-lifecycle
@@ -110,6 +116,8 @@ metadata:
       - packages/extensions/src/mcp/handlers.ts
       - packages/agents/src/mcp/handlers.ts
       - packages/mcp-server/src/delegated-chat-tool-policy.ts
+      - packages/mcp-server/src/host-primitive-declarations.ts
+      - packages/mcp-server/src/delegated-chat-evaluator.ts
       - packages/mcp-server/src/instance-tool-policy.ts
 ---
 
