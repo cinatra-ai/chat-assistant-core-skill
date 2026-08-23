@@ -72,7 +72,7 @@ metadata:
   # shipped-code search that must return zero hits for them, and this file ships.)
   # The policy paths below are watched because that WordPress guidance depends
   # on them: the two primitives carry CORE delegated-chat declarations in
-  # `host-primitive-declarations.ts` (`wordpress_site_tools_list` = discovery,
+  # `capability-plan.ts` (`wordpress_site_tools_list` = discovery,
   # `wordpress_site_tool_call` = dispatch), and `evaluateDelegatedChatAdmission`
   # decides whether chat may reach them at all -- a reviewed admission bound to
   # the owner and version, no longer a name allowlist.
@@ -116,8 +116,8 @@ metadata:
       - packages/extensions/src/mcp/handlers.ts
       - packages/agents/src/mcp/handlers.ts
       - packages/mcp-server/src/delegated-chat-tool-policy.ts
-      - packages/mcp-server/src/host-primitive-declarations.ts
-      - packages/mcp-server/src/delegated-chat-evaluator.ts
+      - packages/mcp-server/src/capability-plan.ts
+      - packages/mcp-server/src/delegated-chat-admission.ts
       - packages/mcp-server/src/instance-tool-policy.ts
 ---
 
