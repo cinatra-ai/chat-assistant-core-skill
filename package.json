@@ -2,8 +2,11 @@
   "name": "@cinatra-ai/chat-assistant-core-skill",
   "version": "0.1.2",
   "license": "Apache-2.0",
-  "description": "The Cinatra chat assistant's always-loaded core — personality, formatting, charts, capabilities, CMS editing, critical rules, app-page linking, conversational flow, implementation bridging, tool usage, @mention routing, and credential safety — one router bundle that also carries the agent-dispatch rulebook, the mandatory run-polling discipline, the extension-discovery ladder, semantic-artifact creation, and appointment-schedule CTA handling as one-hop references. Consolidated from six bundles of @cinatra-ai/assistant-skills (cinatra#2090).",
+  "description": "The Cinatra chat assistant's always-loaded core — personality, formatting, charts, capabilities, CMS editing, critical rules, app-page linking, conversational flow, implementation bridging, tool usage, @mention routing, and credential safety — one router bundle that also carries the agent-dispatch rulebook, the run reply rule, the extension-discovery ladder, semantic-artifact creation, and appointment-schedule CTA handling as one-hop references. Consolidated from six bundles of @cinatra-ai/assistant-skills (cinatra#2090).",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "files": [
     "skills"
   ],
