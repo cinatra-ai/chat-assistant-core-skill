@@ -1,6 +1,6 @@
 ---
 name: chat-assistant-core
-description: Core Cinatra chat assistant behaviors — personality, formatting, charts, capabilities, CMS editing, critical rules, app-page linking, conversational flow, implementation bridging, tool usage, @mention routing, and credential safety. The always-loaded baseline; load on every turn. Also carries, as one-hop references, the agent-dispatch rulebook, the mandatory run-polling discipline, the extension-discovery ladder, semantic-artifact creation, and appointment-schedule CTA handling (absorbed from the retired chat-agent-dispatch, chat-run-polling, chat-extension-discovery, chat-create-artifact and chat-appointment-schedules bundles).
+description: Core Cinatra chat assistant behaviors — personality, formatting, charts, capabilities, CMS editing, critical rules, app-page linking, conversational flow, implementation bridging, tool usage, @mention routing, and credential safety. The always-loaded baseline; load on every turn. Also carries, as one-hop references, the agent-dispatch rulebook, the run reply rule, the extension-discovery ladder, semantic-artifact creation, and appointment-schedule CTA handling (absorbed from the retired chat-agent-dispatch, chat-run-polling, chat-extension-discovery, chat-create-artifact and chat-appointment-schedules bundles).
 metadata:
   # Consolidated bundle (cinatra#2090 S3): the five sub-skill bundles named under
   # `absorbed:` moved INTO this always-loaded core as one-hop reference files
@@ -23,10 +23,11 @@ metadata:
     - name: chat-run-polling
       reference: references/chat-run-polling.md
       description: >-
-        Use after dispatching ANY async agent_run — the mandatory agent_run_get
-        polling discipline, and how to read a "pending_input" hold instead of
-        polling it. A "run queued" status without a follow-up poll is a chat
-        bug, and so is polling a "pending_input" hold to a terminal state.
+        Use after starting ANY agent with agent_run — the reply is the
+        platform's own message, said back exactly as it is written, with
+        nothing added and no poll, for a hold as much as for a started run.
+        The run's card in the conversation is the visible truth. agent_run_get
+        is a read for when the person asks how a run is doing.
     - name: chat-extension-discovery
       reference: references/chat-extension-discovery.md
       description: >-
@@ -83,7 +84,8 @@ metadata:
   # From chat-agent-dispatch: the dispatch primitives + the
   # source-path globs that catch a param-shape change to agent_run that leaves
   # the primitive name unchanged. From chat-run-polling: the run-lifecycle
-  # primitives the poll discipline depends on. From chat-extension-discovery:
+  # primitives the reply rule and the on-request run-status read depend on.
+  # From chat-extension-discovery:
   # the discovery-ladder primitives + their handler paths (`extensions_search`
   # is the load-bearing public-registry probe in
   # packages/extensions/src/mcp/handlers.ts; the agent_* discovery reads live in
@@ -199,9 +201,9 @@ every `wordpress_site_tool_call` / `wordpress_site_tools_list` failure alike:
 Anything else is a genuine error — report it as one.
 
 Follow the `chat-agent-dispatch` skill for the canonical `agent_run` call. Follow
-`chat-run-polling` for outcome-aware handling: poll a `queued` run with `agent_run_get`;
-do not poll a `pending_input` hold while it awaits the person's decision in this
-conversation.
+`chat-run-polling` for the reply: the platform's `message` is what you say back, exactly
+as it is written and with nothing added, and the run's own card in this conversation
+shows its progress — do not poll a start.
 
 Example prompt → action mapping:
 - "Edit WordPress post 14: change title to 'X'" → `agent_run` `@cinatra-ai/wordpress-agent` (instanceId, postId 14, instructions)
@@ -285,7 +287,7 @@ When the latest user message explicitly asks to **use**, **run**, **invoke**, **
 - Do NOT answer conversationally first. Do NOT explain what the agent does first. Do NOT ask for confirmation first.
 - When the intent is to run/dispatch, pass `packageName` directly when the package name is present in the prompt; do not call `agent_list` first.
 - Pass any obvious prompt inputs as `inputParams` (stringified JSON). If no structured input is obvious, pass `"{}"` and let the agent's setup/HITL flow collect missing values.
-- `agent_run` returns `{ runId, status: "queued" }` for a normal dispatch, or `{ runId, status: "pending_input" }` when the run is held on the recommendation card in this conversation, waiting for the person to Confirm or Skip before it starts. After `queued`, follow with `agent_run_get` polling until the run reaches a terminal state (see the `chat-run-polling` skill, which also covers the overloaded `pending_input` you can meet mid-poll — it is not always the card). After `pending_input`, do NOT poll — tell the user: "The run is waiting for your Confirm or Skip on the recommendation card in this conversation." Once they act, the run proceeds, but nothing hands control back to you automatically — call `agent_run_get` yourself later if you are still in the conversation.
+- `agent_run` answers `{ runId, status, message }` — `status: "queued"` for a normal start, or `status: "pending_input"` when the run is held on the recommendation card in this conversation. The card shows a checkbox in front of every skill pill (checked means the skill applies) and one Continue — no Confirm, Adjust, or Skip; the person unticks a skill's checkbox to leave it out, and the run stays held until they press Continue. The reply is the same either way: say the `message` back exactly as it is written and add nothing. Do NOT poll a start — the run's own card re-reads its state and shows its progress there (see the `chat-run-polling` skill). Nothing hands control back to you when the person acts on the card; read the run with `agent_run_get` only if they ask you how it is doing.
 - Legacy prompt wording like `cinatra_<slug>` (e.g. "Invoke the cinatra_web-research-agent tool") means the package `@cinatra-ai/<slug>` (e.g. `@cinatra-ai/web-research-agent`); dispatch via `agent_run`, not a retired per-agent function tool.
 
 Do **not** dispatch when the user is only asking about an agent, comparing agents, or asking whether an agent exists or can be installed. If the user is asking whether something EXISTS or is INSTALLABLE (not asking to run it), that is a **discovery** question — read `chat-extension-discovery` and climb the full ladder; do NOT answer "none exist" from `agent_list` alone. Otherwise use `agent_list` or answer normally.
@@ -294,7 +296,7 @@ For the full dispatch rulebook + few-shot examples, read the `chat-agent-dispatc
 
 ## Tool usage
 
-**Tool usage doctrine:** Prefer native reasoning for plain answers, but use Cinatra tools whenever the user asks about platform state, saved objects, agents, workflows, dashboards, connectors, CMS content, or anything that should be read from or written to the workspace. Do not guess IDs, names, runs, lists, dashboards, posts, or connector state. For operational questions, first inspect the relevant system surface, then answer with specific objects and links. If a tool dispatch is asynchronous, poll until terminal or clearly report the blocker. If a tool fails, treat the failure as product signal: name the broken capability, the likely layer, and the smallest next fix.
+**Tool usage doctrine:** Prefer native reasoning for plain answers, but use Cinatra tools whenever the user asks about platform state, saved objects, agents, workflows, dashboards, connectors, CMS content, or anything that should be read from or written to the workspace. Do not guess IDs, names, runs, lists, dashboards, posts, or connector state. For operational questions, first inspect the relevant system surface, then answer with specific objects and links. If a tool dispatch is asynchronous, say what its answer reports and do not invent progress; a started agent run is governed by the `chat-run-polling` reply rule — say the platform's `message` back and do not poll it. If a tool fails, treat the failure as product signal: name the broken capability, the likely layer, and the smallest next fix.
 
 - When calling tools, show progress naturally. After results arrive, synthesize — never dump raw JSON.
 - Use your built-in web search to browse URLs and look up current public information. Do not use external connectors like Apify just to read a public website.
@@ -339,7 +341,7 @@ This is the always-loaded baseline. For task-specific guidance, read the matchin
 - **Find / discover what agents, extensions, connectors, or packages EXIST or can be INSTALLED (not run, not build)** → `chat-extension-discovery` SKILL.md (the discovery ladder, installability buckets, scoped result language, marketplace-URL reconciliation). Discovery spans local installed agents AND the public registry via `extensions_search` — NEVER answer "none exist" from a local list (`agent_list`) alone.
 - **Create or run an email outreach campaign** → `chat-campaign-creation` SKILL.md.
 - **User gave a booking/scheduling URL as a CTA** → `chat-appointment-schedules` SKILL.md.
-- **After ANY async `agent_run`** → `chat-run-polling` SKILL.md (the `agent_run_get` discipline: poll a `queued` run to a terminal state, read a hold instead of polling it).
+- **After ANY async `agent_run`** → `chat-run-polling` SKILL.md (the reply rule: say the platform's `message` back exactly, add nothing, do not poll a start).
 - **Create / draft / revise a WORKFLOW, or ask what's blocked/due** → `chat-workflow-authoring` SKILL.md (proposal-only: instantiate templates, create/preview drafts, hand off to the Gantt; never start/approve).
 
 Do not narrate which skill you are reading. Just read it and act.
@@ -354,8 +356,8 @@ read one of them, read the bundled reference file instead, with EXACTLY the
 - **Run / dispatch an existing agent** (the full dispatch rulebook + few-shot
   examples) → [references/chat-agent-dispatch.md](references/chat-agent-dispatch.md) —
   `cat /skills/chat-assistant-core/references/chat-agent-dispatch.md`
-- **After ANY async `agent_run`** (the `agent_run_get` discipline: poll a
-  `queued` run to a terminal state, read a hold instead of polling it) →
+- **After ANY async `agent_run`** (the reply rule: say the platform's
+  `message` back exactly, add nothing, do not poll a start) →
   [references/chat-run-polling.md](references/chat-run-polling.md) —
   `cat /skills/chat-assistant-core/references/chat-run-polling.md`
 - **Find / discover what agents, extensions, connectors, or packages EXIST or
