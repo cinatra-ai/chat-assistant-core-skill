@@ -68,7 +68,9 @@ metadata:
   # Drupal still has an instance-list primitive, WordPress does not — cinatra#2022
   # S7 deleted the 12 per-operation `wordpress_*` facade tools, leaving only the
   # two generic governed primitives, which cinatra#2232 put on chat's allowlist
-  # in their place. (Those 12 names are enumerated in the wordpress-mcp-connector
+  # in their place. cinatra#3745 then split the call primitive in two:
+  # `wordpress_site_tool_call` reads only and `wordpress_site_tool_write` carries a
+  # write or a publish. (Those 12 names are enumerated in the wordpress-mcp-connector
   # CHANGELOG and deliberately not re-spelled here: #2022's close gate is a
   # shipped-code search that must return zero hits for them, and this file ships.)
   # The policy paths below are watched because that WordPress guidance depends
@@ -98,6 +100,7 @@ metadata:
       - agent_list
       - agent_run_get
       - wordpress_site_tool_call
+      - wordpress_site_tool_write
       - wordpress_site_tools_list
       - drupal_instances_list
       - agent_source_list
@@ -185,7 +188,7 @@ WordPress reads go through the connected site's own ability catalog, which is al
 per connection and denied by default (cinatra#2022 S7) — a healthy, fully connected site
 still refuses abilities nobody has enabled for that connection yet. These failures are
 self-describing, so read the message and answer what it actually says instead of treating
-every `wordpress_site_tool_call` / `wordpress_site_tools_list` failure alike:
+every `wordpress_site_tool_call` / `wordpress_site_tool_write` / `wordpress_site_tools_list` failure alike:
 
 - Denied by the instance policy for a server — the connection is fine, that ability just
   isn't permitted for it. Do NOT retry, and do NOT report it as the post being missing or
@@ -194,6 +197,12 @@ every `wordpress_site_tool_call` / `wordpress_site_tools_list` failure alike:
 - Not present in the instance catalog, or non-unique across enrolled servers — a catalog
   or naming problem, not a permission one. Re-read `wordpress_site_tools_list` and use an
   ability id it actually advertises; a non-unique name needs a serverId to disambiguate.
+- Refused as read-only — `wordpress_site_tool_call` forwards read abilities only, and it
+  says it is read-only when it refuses an ability that writes or publishes. Do NOT retry it,
+  and do NOT report the post as missing. An edit of a post goes through `agent_run` of the
+  content-editor agent (above). A write that agent does not cover goes through
+  `wordpress_site_tool_write` with the same `instanceId`, `toolName` and `args`; the platform
+  holds that call for the person's decision, so report a held call as held and never as done.
 - A message starting `pending_confirmation:` — a data-changing call is parked waiting for
   the user to confirm it in the chat panel and did NOT run. Surface that and let them
   decide; never retry it or try to work around it.
