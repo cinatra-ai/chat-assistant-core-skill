@@ -200,9 +200,11 @@ every `wordpress_site_tool_call` / `wordpress_site_tool_write` / `wordpress_site
 - Refused as read-only — `wordpress_site_tool_call` forwards read abilities only, and it
   says it is read-only when it refuses an ability that writes or publishes. Do NOT retry it,
   and do NOT report the post as missing. An edit of a post goes through `agent_run` of the
-  content-editor agent (above). A write that agent does not cover goes through
-  `wordpress_site_tool_write` with the same `instanceId`, `toolName` and `args`; the platform
-  holds that call for the person's decision, so report a held call as held and never as done.
+  content-editor agent (above). Never call `wordpress_site_tool_write` yourself to get around
+  the refusal: it is the write path of that agent, and nothing in this skill authorizes you to
+  create, delete, publish or upload through it. Say the change was not made and offer the edit
+  through the agent. The platform holds a write call for the person's decision; if one is held,
+  report it as held and never as done.
 - A message starting `pending_confirmation:` — a data-changing call is parked waiting for
   the user to confirm it in the chat panel and did NOT run. Surface that and let them
   decide; never retry it or try to work around it.
