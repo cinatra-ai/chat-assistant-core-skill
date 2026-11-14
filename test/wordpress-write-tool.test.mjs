@@ -56,15 +56,24 @@ describe("the WordPress read tool and write tool", () => {
     );
   });
 
-  it("a read-only refusal is told apart, and a write goes through the write tool", () => {
+  it("a read-only refusal is told apart, and the edit goes to the content-editor agent", () => {
     assert.match(text, /Refused as read-only/);
     assert.match(text, new RegExp(`\`${READ_TOOL}\` forwards read abilities only`));
-    assert.match(
-      text,
-      new RegExp(`through \`${WRITE_TOOL}\` with the same \`instanceId\`, \`toolName\` and \`args\``),
-    );
     assert.match(text, /An edit of a post goes through `agent_run` of the content-editor agent/);
-    assert.match(text, /report a held call as held and never as done/);
+    assert.match(text, /report it as held and never as done/);
+  });
+
+  it("the skill gives no generic direct-write instruction for the write tool", () => {
+    // The write tool forwards every ability the read proxy refuses (create,
+    // delete, publish, upload). No recipe in this skill authorizes any of them,
+    // so the skill must forbid calling the tool itself and must not offer it as
+    // a fallback for "a write the agent does not cover".
+    const body = text.replace(/^---[\s\S]*?--- /, "");
+    assert.ok(body.includes(`\`${WRITE_TOOL}\``), "the body still names the write tool (failure guidance)");
+    assert.doesNotMatch(body, new RegExp(`goes through \`${WRITE_TOOL}\``), "no sentence routes a write through the write tool");
+    assert.doesNotMatch(body, /(?:write|writes) (?:that|which) (?:the|that) [^.]*(?:does|do) not cover/i, "no fallback for an uncovered write");
+    assert.doesNotMatch(body, new RegExp(`\`${WRITE_TOOL}\` with the same`), "no copy-the-arguments instruction");
+    assert.match(body, new RegExp(`Never call \`${WRITE_TOOL}\` yourself`));
   });
 
   it("the post lookup is a read through the read tool and never names the write tool", () => {
